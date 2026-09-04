@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\Service;
 
+use App\Application\DTO\BlikAuthorizeRequest;
 use App\Application\DTO\NotificationRequest;
 use App\Application\DTO\RegisterPaymentRequest;
 use App\Domain\Event\PaymentCapturedEvent;
@@ -63,6 +64,50 @@ final class PaymentService
 
         // 5. Persist
         $this->repository->save($transaction);
+
+        return $transaction;
+    }
+
+    /**
+     * Process direct BLIK 6-digit one-time code authorization.
+     */
+    public function authorizeBlik(BlikAuthorizeRequest $request): Transaction
+    {
+        $transaction = $this->repository->findBySessionIdAndMerchantId($request->sessionId, $request->merchantId);
+        if ($transaction === null) {
+            throw new RuntimeException(sprintf('Transaction with sessionId "%s" not found.', $request->sessionId));
+        }
+
+        // Simulate BLIK network response codes:
+        if (str_starts_with($request->blikCode, '777')) {
+            $transaction->reject('BLIK user rejected authorization in banking app.');
+            $this->repository->save($transaction);
+            return $transaction;
+        }
+
+        if (str_starts_with($request->blikCode, '999')) {
+            $transaction->reject('BLIK banking app confirmation timeout.');
+            $this->repository->save($transaction);
+            return $transaction;
+        }
+
+        // Authorize & Capture
+        $transaction->authorize('BLIK');
+        $transaction->capture();
+        $this->repository->save($transaction);
+
+        // Publish event to RabbitMQ
+        $this->messageBus->dispatch(new PaymentCapturedEvent(
+            transactionId: $transaction->getId(),
+            sessionId: $transaction->getSessionId(),
+            merchantId: $transaction->getMerchantId(),
+            amountInMinorUnits: $transaction->getMoney()->amountInMinorUnits,
+            currency: $transaction->getMoney()->currency,
+            email: $transaction->getEmail(),
+            clientIp: $transaction->getClientIp(),
+            paymentMethod: 'BLIK',
+            capturedAt: new DateTimeImmutable()
+        ));
 
         return $transaction;
     }

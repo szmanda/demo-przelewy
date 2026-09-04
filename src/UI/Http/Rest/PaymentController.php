@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\UI\Http\Rest;
 
+use App\Application\DTO\BlikAuthorizeRequest;
 use App\Application\DTO\NotificationRequest;
 use App\Application\DTO\RegisterPaymentRequest;
+use App\Application\Service\FraudDetectionService;
 use App\Application\Service\PaymentService;
 use App\Domain\Exception\InvalidSignatureException;
 use App\Domain\Repository\TransactionRepositoryInterface;
@@ -25,7 +27,8 @@ final class PaymentController extends AbstractController
     public function __construct(
         private readonly PaymentService $paymentService,
         private readonly TransactionRepositoryInterface $transactionRepository,
-        private readonly ?ElasticsearchTransactionRepository $elasticsearchRepository = null
+        private readonly ?ElasticsearchTransactionRepository $elasticsearchRepository = null,
+        private readonly ?FraudDetectionService $fraudDetectionService = null
     ) {
     }
 
@@ -55,6 +58,32 @@ final class PaymentController extends AbstractController
             ], Response::HTTP_CREATED);
         } catch (InvalidSignatureException $e) {
             return $this->json(['error' => 'Signature verification failed: ' . $e->getMessage()], Response::HTTP_UNAUTHORIZED);
+        } catch (Throwable $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
+    }
+
+    #[Route('/payments/blik/authorize', name: 'api_payment_blik_authorize', methods: ['POST'])]
+    public function authorizeBlik(Request $request): JsonResponse
+    {
+        $payload = json_decode($request->getContent(), true);
+        if (!is_array($payload)) {
+            return $this->json(['error' => 'Invalid JSON payload'], Response::HTTP_BAD_REQUEST);
+        }
+
+        try {
+            $dto = BlikAuthorizeRequest::fromArray($payload);
+            $transaction = $this->paymentService->authorizeBlik($dto);
+
+            return $this->json([
+                'status' => $transaction->getStatus()->value === 'CAPTURED' ? 'SUCCESS' : 'FAILED',
+                'data' => [
+                    'id' => $transaction->getId(),
+                    'sessionId' => $transaction->getSessionId(),
+                    'status' => $transaction->getStatus()->value,
+                    'rejectionReason' => $transaction->getRejectionReason(),
+                ],
+            ], Response::HTTP_OK);
         } catch (Throwable $e) {
             return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
@@ -138,6 +167,30 @@ final class PaymentController extends AbstractController
         } catch (Throwable $e) {
             return $this->json(['error' => 'Elasticsearch search error: ' . $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    #[Route('/fraud/check', name: 'api_fraud_check', methods: ['POST'])]
+    public function checkFraud(Request $request): JsonResponse
+    {
+        if ($this->fraudDetectionService === null) {
+            return $this->json(['error' => 'Fraud detection service not available'], Response::HTTP_SERVICE_UNAVAILABLE);
+        }
+
+        $payload = json_decode($request->getContent(), true);
+        if (!is_array($payload)) {
+            return $this->json(['error' => 'Invalid JSON payload'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $clientIp = (string) ($payload['clientIp'] ?? '127.0.0.1');
+        $email = (string) ($payload['email'] ?? '');
+        $amount = (int) ($payload['amount'] ?? 0);
+
+        $result = $this->fraudDetectionService->evaluateRisk($clientIp, $email, $amount);
+
+        return $this->json([
+            'status' => 'success',
+            'data' => $result,
+        ]);
     }
 
     #[Route('/analytics/gmv', name: 'api_analytics_gmv', methods: ['GET'])]

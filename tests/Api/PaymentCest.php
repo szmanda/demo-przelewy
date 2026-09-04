@@ -184,4 +184,94 @@ final class PaymentCest
             'currency' => $currency,
         ]);
     }
+
+    public function testAuthorizeBlikPaymentSuccessfully(ApiTester $I): void
+    {
+        $sessionId = 'sess_blik_' . bin2hex(random_bytes(6));
+        $merchantId = 100234;
+        $amount = 12000;
+        $currency = 'PLN';
+
+        $regSig = $this->signatureCalculator->calculateForRegistration(
+            $sessionId,
+            $merchantId,
+            $amount,
+            $currency,
+            self::CRC_KEY
+        );
+
+        // Register session
+        $I->sendPost('/api/v1/payments/register', [
+            'sessionId' => $sessionId,
+            'merchantId' => $merchantId,
+            'amount' => $amount,
+            'currency' => $currency,
+            'description' => 'BLIK Fast Checkout',
+            'email' => 'blik_user@example.com',
+            'clientIp' => '127.0.0.1',
+            'signature' => $regSig,
+        ]);
+        $I->seeResponseCodeIs(201);
+
+        // Authorize with valid 6-digit BLIK code
+        $I->sendPost('/api/v1/payments/blik/authorize', [
+            'sessionId' => $sessionId,
+            'merchantId' => $merchantId,
+            'blikCode' => '123456',
+        ]);
+
+        $I->seeResponseCodeIs(200);
+        $I->seeResponseContainsJson([
+            'status' => 'SUCCESS',
+            'data' => [
+                'sessionId' => $sessionId,
+                'status' => 'CAPTURED',
+            ],
+        ]);
+    }
+
+    public function testBlikPaymentUserRejection(ApiTester $I): void
+    {
+        $sessionId = 'sess_blik_reject_' . bin2hex(random_bytes(6));
+        $merchantId = 100234;
+        $amount = 8000;
+        $currency = 'PLN';
+
+        $regSig = $this->signatureCalculator->calculateForRegistration(
+            $sessionId,
+            $merchantId,
+            $amount,
+            $currency,
+            self::CRC_KEY
+        );
+
+        // Register session
+        $I->sendPost('/api/v1/payments/register', [
+            'sessionId' => $sessionId,
+            'merchantId' => $merchantId,
+            'amount' => $amount,
+            'currency' => $currency,
+            'description' => 'BLIK Rejection Test',
+            'email' => 'blik_reject@example.com',
+            'clientIp' => '127.0.0.1',
+            'signature' => $regSig,
+        ]);
+        $I->seeResponseCodeIs(201);
+
+        // Authorize with simulated rejected code (starting with 777)
+        $I->sendPost('/api/v1/payments/blik/authorize', [
+            'sessionId' => $sessionId,
+            'merchantId' => $merchantId,
+            'blikCode' => '777123',
+        ]);
+
+        $I->seeResponseCodeIs(200);
+        $I->seeResponseContainsJson([
+            'status' => 'FAILED',
+            'data' => [
+                'sessionId' => $sessionId,
+                'status' => 'REJECTED',
+            ],
+        ]);
+    }
 }
