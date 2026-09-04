@@ -1,6 +1,7 @@
 /.phpunit.cache
 /var/
 /vendor/
+/tests/_output/
 .env.local
 .env.local.php
 .env.*.local
