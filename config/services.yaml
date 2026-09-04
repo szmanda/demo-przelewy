@@ -1,4 +1,5 @@
 parameters:
+    env(ELASTICSEARCH_URL): 'http://localhost:9200'
 
 services:
     _defaults:
@@ -9,4 +10,14 @@ services:
         resource: '../src/'
         exclude:
             - '../src/Domain/Model/'
+            - '../src/Domain/Event/'
+            - '../src/Domain/Exception/'
+            - '../src/Infrastructure/Persistence/Doctrine/Entity/'
             - '../src/Kernel.php'
+
+    App\Domain\Repository\TransactionRepositoryInterface: '@App\Infrastructure\Persistence\Doctrine\DoctrineTransactionRepository'
+
+    Elastic\Elasticsearch\Client:
+        factory: ['App\Infrastructure\Elasticsearch\ElasticsearchClientFactory', 'createClient']
+        arguments:
+            $elasticsearchUrl: '%env(ELASTICSEARCH_URL)%'
