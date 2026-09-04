@@ -1,0 +1,1 @@
+{"error":"Accessing static property App\\Infrastructure\\Persistence\\InMemory\\InMemoryTransactionRepository::$storage as non static at \/home\/michal\/Projects\/demo-przelewy\/src\/Infrastructure\/Persistence\/InMemory\/InMemoryTransactionRepository.php:27"}

@@ -1,0 +1,9 @@
+actor: ApiTester
+modules:
+    enabled:
+        - REST:
+            depends: Symfony
+        - Symfony:
+            app_path: src
+            environment: test
+        - Asserts

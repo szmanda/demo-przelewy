@@ -1,0 +1,19 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\Infrastructure\Persistence\InMemory\InMemoryTransactionRepository:
+        public: true
+
+    App\Domain\Repository\TransactionRepositoryInterface: '@App\Infrastructure\Persistence\InMemory\InMemoryTransactionRepository'
+
+    # Mock or in-memory Elasticsearch repository for tests
+    App\Infrastructure\Elasticsearch\Repository\ElasticsearchTransactionRepository:
+        class: App\Infrastructure\Elasticsearch\Repository\ElasticsearchTransactionRepository
+        arguments:
+            $client: '@test.elasticsearch.client'
+
+    test.elasticsearch.client:
+        class: Elastic\Elasticsearch\Client
+        factory: ['App\Tests\Support\MockElasticsearchClientFactory', 'create']

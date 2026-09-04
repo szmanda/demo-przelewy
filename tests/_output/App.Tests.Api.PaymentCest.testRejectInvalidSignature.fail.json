@@ -1,0 +1,1 @@
+{"error":"Signature verification failed: Cryptographic signature mismatch. Expected \u0022a514df15eacceb0d1c8151f15d8bb1e33bef1a6d048ea7c3e3f58a59b7e294df5db15b5dd0cfdfacede3ccd56879d518\u0022, received \u0022invalid_tampered_signature_hash\u0022."}

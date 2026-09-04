@@ -1,0 +1,14 @@
+namespace: App\Tests
+paths:
+    tests: tests
+    output: tests/_output
+    data: tests/Support/Data
+    support: tests/Support
+    envs: tests/_envs
+actor_suffix: Tester
+params:
+    - .env.test
+    - .env
+extensions:
+    enabled:
+        - Codeception\Extension\RunFailed
