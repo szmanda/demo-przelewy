@@ -48,8 +48,6 @@ services:
       POSTGRES_DB: przelewy_db
       POSTGRES_USER: przelewy_user
       POSTGRES_PASSWORD: przelewy_pass
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -64,8 +62,6 @@ services:
     image: redis:7
     container_name: przelewy_redis
     restart: unless-stopped
-    ports:
-      - "6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -81,7 +77,6 @@ services:
     container_name: przelewy_rabbitmq
     restart: unless-stopped
     ports:
-      - "5672:5672"   # AMQP protocol
       - "15672:15672" # Management UI
     environment:
       RABBITMQ_DEFAULT_USER: guest
@@ -106,7 +101,6 @@ services:
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     ports:
       - "9200:9200"
-      - "9300:9300"
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
     networks:
