@@ -351,19 +351,3 @@ docker compose exec app php bin/console messenger:consume async -vv
 # Check PostgreSQL connection
 docker compose exec postgres psql -U przelewy_user -d przelewy_db
 ```
-
----
-
-## 6. Project Roadmap & Planned Features
-
-- [x] Docker environment orchestration (PostgreSQL 16, Redis 7, RabbitMQ 3, Elasticsearch 8, Symfony 7, Nginx)
-- [x] Domain Architecture Blueprint & Technical Documentation
-- [ ] Symfony 7 Core Gateway Bundle with Clean Architecture Skeleton
-- [ ] Transaction Aggregate with Domain State Machine & Guard Policies
-- [ ] CRC/HMAC-SHA384 Signature Calculator & Validator
-- [ ] Asynchronous Outbox Event Publisher with RabbitMQ Messenger
-- [ ] Elasticsearch Index Management, Automated Hydration & Velocity Scoring Module
-- [ ] Comprehensive PHPUnit & Integration Tests
-
----
-*Built with ❤️ for the Nexi / Przelewy24 & Polskie ePłatności technical evaluation.*

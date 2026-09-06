@@ -1,0 +1,135 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Checkout & Gateway Simulator | Przelewy24 Nexi Demo{% endblock %}
+
+{% block stylesheets %}
+    <link rel="stylesheet" href="/css/demo.css">
+{% endblock %}
+
+{% block body %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Left Column: Checkout Simulator -->
+    <div class="lg:col-span-1 space-y-6">
+        <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+            <h2 class="text-base font-bold flex items-center mb-4 text-slate-900">
+                <i class="fa-solid fa-credit-card text-emerald-700 mr-2"></i>
+                Fast Checkout Simulator
+            </h2>
+            <form id="checkoutForm" class="space-y-4 text-sm">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Customer Email</label>
+                    <input type="email" id="email" value="anna.kowalska@example.com" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 text-sm focus:outline-none focus:border-emerald-700 focus:ring-1 focus:ring-emerald-700 transition">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Amount (PLN)</label>
+                        <input type="number" id="amount" value="149.99" step="0.01" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 text-sm focus:outline-none focus:border-emerald-700 focus:ring-1 focus:ring-emerald-700 transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Merchant ID</label>
+                        <input type="number" id="merchantId" value="100234" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 text-sm focus:outline-none focus:border-emerald-700 focus:ring-1 focus:ring-emerald-700 transition">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Payment Method</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button type="button" onclick="selectMethod('BLIK')" class="method-btn py-2 px-3 rounded-lg border border-emerald-800 bg-emerald-50 font-bold text-center text-xs text-emerald-900 transition" data-method="BLIK">BLIK</button>
+                        <button type="button" onclick="selectMethod('CARD')" class="method-btn py-2 px-3 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-center text-xs text-slate-700 transition" data-method="CARD">Card</button>
+                        <button type="button" onclick="selectMethod('PBL_MBANK')" class="method-btn py-2 px-3 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-center text-xs text-slate-700 transition" data-method="PBL_MBANK">mBank PBL</button>
+                    </div>
+                </div>
+
+                <div id="blikSection" class="p-3.5 bg-emerald-50/60 border border-emerald-200 rounded-xl space-y-2">
+                    <label class="block text-xs font-semibold text-emerald-900">BLIK 6-Digit Code</label>
+                    <input type="text" id="blikCode" value="123456" maxlength="6" class="w-full bg-white border border-emerald-300 rounded-lg px-3 py-2 text-center font-mono text-xl tracking-widest text-slate-900 focus:outline-none focus:border-emerald-700 focus:ring-1 focus:ring-emerald-700">
+                    <p class="text-[11px] text-slate-600">💡 Tip: Codes starting with <code class="text-amber-800 bg-amber-50 px-1 py-0.5 rounded border border-amber-200 font-mono">777</code> simulate rejection; others simulate success.</p>
+                </div>
+
+                <button type="button" onclick="executePayment()" id="payBtn" class="w-full bg-emerald-800 hover:bg-emerald-900 text-white font-semibold py-3 px-4 rounded-xl shadow-sm transition duration-150 flex items-center justify-center">
+                    <i class="fa-solid fa-lock mr-2"></i> Pay & Authorize
+                </button>
+            </form>
+        </div>
+
+        <!-- Fraud Velocity Checker -->
+        <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+            <h2 class="text-base font-bold flex items-center mb-3 text-slate-900">
+                <i class="fa-solid fa-shield-halved text-emerald-700 mr-2"></i>
+                Elasticsearch Anti-Fraud Engine
+            </h2>
+            <p class="text-xs text-slate-600 mb-4">Calculates real-time velocity score across IP and Email using Elasticsearch aggregation counters.</p>
+            <button type="button" onclick="checkFraud()" class="w-full bg-slate-50 hover:bg-slate-100 border border-slate-300 text-slate-700 font-semibold py-2 px-3 rounded-lg text-xs transition">
+                Run Risk Evaluation on Current Input
+            </button>
+            <div id="fraudResult" class="mt-3 hidden p-3 rounded-xl border text-xs space-y-1"></div>
+        </div>
+    </div>
+
+    <!-- Middle & Right Columns: Real-Time Search & Aggregations -->
+    <div class="lg:col-span-2 space-y-6">
+        <!-- Search & Filters -->
+        <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+                <h2 class="text-base font-bold flex items-center text-slate-900">
+                    <i class="fa-solid fa-magnifying-glass text-emerald-700 mr-2"></i>
+                    Live Elasticsearch Search
+                </h2>
+                <div class="flex items-center space-x-2">
+                    <button onclick="seedData()" class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-lg text-xs font-semibold transition">
+                        <i class="fa-solid fa-database mr-1"></i> Seed 20 Mock Transactions
+                    </button>
+                    <button onclick="loadTransactions()" class="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold transition">
+                        <i class="fa-solid fa-rotate mr-1"></i> Refresh
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                <input type="text" id="searchQuery" placeholder="Search by email, session ID, description..." class="bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-emerald-700 focus:ring-1 focus:ring-emerald-700">
+                <select id="statusFilter" class="bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-emerald-700 focus:ring-1 focus:ring-emerald-700">
+                    <option value="">All Statuses</option>
+                    <option value="CAPTURED">CAPTURED</option>
+                    <option value="PENDING">PENDING</option>
+                    <option value="REJECTED">REJECTED</option>
+                    <option value="REFUNDED">REFUNDED</option>
+                </select>
+                <button onclick="loadTransactions()" class="bg-emerald-800 hover:bg-emerald-900 text-white font-semibold py-2 px-4 rounded-lg text-xs transition">
+                    Filter Elasticsearch
+                </button>
+            </div>
+
+            <div class="overflow-x-auto border border-slate-200 rounded-lg">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
+                            <th class="py-2.5 px-3">Session ID</th>
+                            <th class="py-2.5 px-3">Customer</th>
+                            <th class="py-2.5 px-3">Amount</th>
+                            <th class="py-2.5 px-3">Method</th>
+                            <th class="py-2.5 px-3">Status</th>
+                            <th class="py-2.5 px-3">Created</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionsTableBody" class="divide-y divide-slate-200 text-slate-700">
+                        <tr>
+                            <td colspan="6" class="py-4 text-center text-slate-500">Loading transactions...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Activity Log -->
+        <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+            <h3 class="text-sm font-bold text-slate-900 mb-2 flex items-center">
+                <i class="fa-solid fa-terminal text-emerald-700 mr-2"></i> Event Stream & Architecture Traces
+            </h3>
+            <pre id="activityLog" class="bg-slate-950 p-4 rounded-lg text-[11px] font-mono text-emerald-400 overflow-x-auto max-h-48 border border-slate-800">// Gateway initialized. Ready to process payment events...</pre>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    <script src="/js/demo.js"></script>
+{% endblock %}
