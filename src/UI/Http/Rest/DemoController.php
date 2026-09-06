@@ -13,7 +13,7 @@ final class DemoController extends AbstractController
     #[Route('/', name: 'demo_home', methods: ['GET'])]
     public function index(): Response
     {
-        $html = <<<HTML
+        $html = <<<'HTML'
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -325,12 +325,12 @@ final class DemoController extends AbstractController
 
             el.innerHTML = `
                 <div class="font-bold flex justify-between">
-                    <span>Risk Level: \${data.data.riskLevel} (Score: \${data.data.score}/100)</span>
-                    <span class="font-mono uppercase">\${data.data.recommendation}</span>
+                    <span>Risk Level: ${data.data.riskLevel} (Score: ${data.data.score}/100)</span>
+                    <span class="font-mono uppercase">${data.data.recommendation}</span>
                 </div>
-                <div>IP attempts (1m): \${data.data.metrics.ipCount1m} | Email attempts (15m): \${data.data.metrics.emailCount15m}</div>
+                <div>IP attempts (1m): ${data.data.metrics.ipCount1m} | Email attempts (15m): ${data.data.metrics.emailCount15m}</div>
             `;
-            log(`🛡️ Fraud check: Score=\${data.data.score}, Level=\${data.data.riskLevel}, Decision=\${data.data.recommendation}`);
+            log(`🛡️ Fraud check: Score=${data.data.score}, Level=${data.data.riskLevel}, Decision=${data.data.recommendation}`);
         }
 
         async function loadTransactions() {
@@ -358,12 +358,12 @@ final class DemoController extends AbstractController
                     const date = tx.created_at ? new Date(tx.created_at).toLocaleTimeString() : '-';
                     const amount = (tx.amount / 100).toFixed(2);
                     row.innerHTML = `
-                        <td class="py-2.5 px-3 font-mono text-[11px] text-slate-300">\${tx.session_id}</td>
-                        <td class="py-2.5 px-3 text-slate-400">\${tx.email || '-'}</td>
-                        <td class="py-2.5 px-3 font-semibold text-slate-100">\${amount} \${tx.currency}</td>
-                        <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-slate-300 border border-slate-700">\${tx.payment_method || 'N/A'}</span></td>
-                        <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold \${badgeClass}">\${tx.status}</span></td>
-                        <td class="py-2.5 px-3 text-slate-500">\${date}</td>
+                        <td class="py-2.5 px-3 font-mono text-[11px] text-slate-300">${tx.session_id}</td>
+                        <td class="py-2.5 px-3 text-slate-400">${tx.email || '-'}</td>
+                        <td class="py-2.5 px-3 font-semibold text-slate-100">${amount} ${tx.currency}</td>
+                        <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-slate-300 border border-slate-700">${tx.payment_method || 'N/A'}</span></td>
+                        <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${badgeClass}">${tx.status}</span></td>
+                        <td class="py-2.5 px-3 text-slate-500">${date}</td>
                     `;
                     tbody.appendChild(row);
                 });

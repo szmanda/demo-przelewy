@@ -31,6 +31,43 @@ class Transaction
         $this->updatedAt = new DateTimeImmutable();
     }
 
+    /**
+     * Reconstruct an existing transaction from persistence storage without re-triggering domain lifecycle rules.
+     */
+    public static function reconstitute(
+        string $id,
+        string $sessionId,
+        int $merchantId,
+        Money $money,
+        string $description,
+        string $email,
+        string $clientIp,
+        TransactionStatus $status,
+        ?string $token,
+        ?string $paymentMethod,
+        ?string $rejectionReason,
+        DateTimeImmutable $createdAt,
+        DateTimeImmutable $updatedAt
+    ): self {
+        $transaction = new self(
+            id: $id,
+            sessionId: $sessionId,
+            merchantId: $merchantId,
+            money: $money,
+            description: $description,
+            email: $email,
+            clientIp: $clientIp,
+            initialStatus: $status
+        );
+        $transaction->token = $token;
+        $transaction->paymentMethod = $paymentMethod;
+        $transaction->rejectionReason = $rejectionReason;
+        $transaction->createdAt = $createdAt;
+        $transaction->updatedAt = $updatedAt;
+
+        return $transaction;
+    }
+
     public function getId(): string
     {
         return $this->id;

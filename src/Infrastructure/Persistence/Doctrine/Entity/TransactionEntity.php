@@ -84,7 +84,7 @@ class TransactionEntity
 
     public function toDomain(): Transaction
     {
-        $transaction = new Transaction(
+        return Transaction::reconstitute(
             id: $this->id,
             sessionId: $this->sessionId,
             merchantId: $this->merchantId,
@@ -92,21 +92,13 @@ class TransactionEntity
             description: $this->description,
             email: $this->email,
             clientIp: $this->clientIp,
-            initialStatus: TransactionStatus::from($this->status)
+            status: TransactionStatus::from($this->status),
+            token: $this->token,
+            paymentMethod: $this->paymentMethod,
+            rejectionReason: $this->rejectionReason,
+            createdAt: $this->createdAt,
+            updatedAt: $this->updatedAt
         );
-
-        if ($this->token !== null && $this->status !== TransactionStatus::CREATED->value) {
-            $reflection = new \ReflectionClass($transaction);
-            $tokenProp = $reflection->getProperty('token');
-            $tokenProp->setAccessible(true);
-            $tokenProp->setValue($transaction, $this->token);
-
-            $methodProp = $reflection->getProperty('paymentMethod');
-            $methodProp->setAccessible(true);
-            $methodProp->setValue($transaction, $this->paymentMethod);
-        }
-
-        return $transaction;
     }
 
     public function updateFromDomain(Transaction $domain): void

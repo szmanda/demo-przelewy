@@ -274,4 +274,12 @@ final class PaymentCest
             ],
         ]);
     }
+
+    public function testDemoHomePage(ApiTester $I): void
+    {
+        $I->sendGet('/');
+        $I->seeResponseCodeIs(200);
+        $I->seeResponseContains('Payment Gateway Demo');
+        $I->seeResponseContains('Fast Checkout Simulator');
+    }
 }

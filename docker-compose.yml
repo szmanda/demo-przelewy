@@ -26,6 +26,32 @@ services:
     networks:
       - przelewy_network
 
+  messenger_worker:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: przelewy_messenger_worker
+    restart: unless-stopped
+    command: php bin/console messenger:consume async --time-limit=3600 --memory-limit=128M -vv
+    volumes:
+      - ./:/var/www/html
+    environment:
+      APP_ENV: dev
+      APP_SECRET: 3f958f27cf17b07dfb9d4243a492823a
+      DATABASE_URL: "postgresql://przelewy_user:przelewy_pass@postgres:5432/przelewy_db?serverVersion=16&charset=utf8"
+      REDIS_URL: "redis://redis:6379"
+      MESSENGER_TRANSPORT_DSN: "amqp://guest:guest@rabbitmq:5672/%2f/messages"
+      ELASTICSEARCH_URL: "http://elasticsearch:9200"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_started
+    networks:
+      - przelewy_network
+
   web:
     image: nginx:alpine
     container_name: przelewy_web
